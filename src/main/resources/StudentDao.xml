@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+ <mapper   namespace="app.Dao.StudentDao">
+    <select  id="insertuser"  resultType="Java.lang.Interger">
+       INSERT INTO user(name,id,age) values (#{name},#{id},#{age})
+
+    </select>
+
+
+
+
+ </mapper>

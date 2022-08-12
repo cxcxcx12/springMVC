@@ -16,7 +16,8 @@ public class userController {
     @RequestMapping("/user")
     public String getuser(@RequestParam("name")String name,@RequestParam("age")String age,@RequestParam("id")String id){
         System.out.println("进入方法里面   "+"名字："+name+"    年龄："+age+"   学号："+id);
-        System.out.println(service == null);
+
+
         service.insertuser(name,age,id);
 
         return "index.jsp";

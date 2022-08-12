@@ -1,9 +1,8 @@
 package MVC;
 
-import MVC.annotation.Autowired;
-import MVC.annotation.Controller;
-import MVC.annotation.RequestMapping;
-import MVC.annotation.Service;
+import MVC.annotation.*;
+import Mybatis.SqlSession;
+import Mybatis.annotation.Mapper;
 
 import java.io.File;
 import java.lang.reflect.Field;
@@ -19,13 +18,15 @@ public class WebApplicationContext {
     private List<String> filelist= new ArrayList<>();
     private Map<String, Object> ioC=new HashMap<>();
    private List<Handlerr> handlers = new ArrayList<Handlerr>();
+    private SqlSession session;
 
     public WebApplicationContext(String packageUrl) {
         this.packageUrl = packageUrl;
+        session=new SqlSession();
+
     }
 
-    public WebApplicationContext() {
-    }
+
 
     //根据url  加载包内的类入容器， 并且依赖注入关系弄好
     public void refresh() {
@@ -35,18 +36,28 @@ public class WebApplicationContext {
             for (String s1 : split) {
                 getAllFile(s1);
             }
+
+
+            //对象注入容器中
             for (String s1 : filelist) {
 
-                    Class<?> aClass = Class.forName(s1);
+                    Class<?> aClass = Class.forName(s1);    //类名
                     if (aClass.isAnnotationPresent(Service.class)||aClass.isAnnotationPresent(Controller.class)) {
                         Object o = aClass.newInstance();
                         ioC.put(aClass.getSimpleName(), o);
                     }
 
+                    //mybatis的代理对象的注入过程  是接口  并且有mapper注解
+                if (aClass.isInterface()&&aClass.isAnnotationPresent(Mapper.class)) {
+                    Object proxy = session.getProxy(aClass);
+                    ioC.put(aClass.getSimpleName(), proxy);
+                }
+
+
             }
 
 
-
+          //依赖注入
             for (Map.Entry<String, Object> objectEntry : ioC.entrySet()) {
                 Object value = objectEntry.getValue();
                 Field[] fields = value.getClass().getDeclaredFields();
@@ -54,7 +65,9 @@ public class WebApplicationContext {
                     if (field.isAnnotationPresent(Autowired.class)) {
                         field.setAccessible(true);
 
-
+                                              //field.getType().getSimpleName() 这里只是名字而已，
+                       // 他是 包名和类包的实例对象
+                               // 如果是只有接口，那映射关系就是 接口所在包名，接口名  和 代理对象的映射关系而已
                         field.set(value, ioC.get(field.getType().getSimpleName()));
                     }
                 }
